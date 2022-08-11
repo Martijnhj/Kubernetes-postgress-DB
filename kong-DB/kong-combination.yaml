@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kong-declaratives
+  #namespace: kong-namespace
+  labels:
+   type: local
+spec: 
+  capacity: 
+    storage: 2Gi 
+  volumeMode: Filesystem
+  storageClassName: standard
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: /kongdeclarative/
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+ name: kong-declaratives
+ namespace: kong
+spec: 
+ storageClassName: standard
+ accessModes:
+  - ReadWriteMany
+ resources:
+  requests:
+   storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: kong-deployment
+ namespace: kong
+ labels:
+  app: kong
+spec:
+ replicas: 1
+ selector:
+  matchLabels:
+   app: kong
+ template:
+  metadata:
+   labels:
+    app: kong
+  spec:
+   containers:
+    - name: kong
+      image: kong/kong-gateway:latest
+      env:
+       - name: KONG_DATABASE
+         value: "off"
+       - name: KONG_DECLARATIVE_CONFIG
+         value: "/kongdeclarative/kong-config.yml"
+       - name: KONG_PROXY_ACCESS_LOG
+         value: "/dev/stdout"
+       - name: KONG_ADMIN_ACCESS_LOG
+         value: "/dev/stdout"
+       - name: KONG_PROXY_ERROR_LOG
+         value: "/dev/stderr"
+       - name: KONG_ADMIN_ERROR_LOG
+         value: "/dev/stderr"
+       - name: KONG_ADMIN_LISTEN
+         value: "0.0.0.0:8001"
+       - name: KONG_ADMIN_GUI_URL
+         value: "http://localhost:8002"
+       - name: KONG_LICENSE_DATA
+      ports:
+       - containerPort: 8000
+       - containerPort: 8443
+       - containerPort: 8001
+       - containerPort: 8444
+       - containerPort: 8002
+       - containerPort: 8445
+       - containerPort: 8003
+       - containerPort: 8004
+      volumeMounts:
+       - name: kong-declaratives
+         mountPath: /kongdeclarative/
+      securityContext:
+       privileged: true # Processes in privileged containers are essentially equivalent to root on the host.
+         
+   volumes:
+     - name: kong-declaratives
+       #hostPath:
+       # directory location on host
+       #path: /data/kongdeclerative
+       # this field is optional
+       #type: Directory
+       persistentVolumeClaim:
+        claimName: kong-declaratives
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: kong-service
+ namespace: kong
+spec:
+ selector:
+  app: kong
+ ports:
+  - protocol: TCP
+    name: tcp-8000
+    port: 80
+    targetPort: 8000
+  - protocol: TCP
+    name: tcp-8443
+    port: 8443
+    targetPort: 8443
+  - protocol: TCP
+    name: tcp-8001
+    port: 8001
+    targetPort: 8001
+  - protocol: TCP
+    name: tcp-8444
+    port: 8444
+    targetPort: 8444
+  - protocol: TCP
+    name: tcp-8002
+    port: 8002
+    targetPort: 8002
+  - protocol: TCP
+    name: tcp-8445
+    port: 8445
+    targetPort: 8445
+  - protocol: TCP
+    name: tcp-8003
+    port: 8003
+    targetPort: 8003
+  - protocol: TCP
+    name: tcp-8004
+    port: 8004
+    targetPort: 8004
+---
+--- 
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: 
+  name: default-ingress
+  namespace: kong
+  annotations:
+    kubernetes.io/ingress.class: kong
+spec: 
+  rules: 
+    - host: kong.com
+      http: 
+        paths: 
+        - path: /
+          pathType: Prefix
+          backend:
+             service:
+              name: kong-service
+              port: 
+               number: 80
+    - host: kong.admin.com
+      http: 
+        paths: 
+        - path: /
+          pathType: Prefix
+          backend:
+             service:
+              name: kong-service
+              port: 
+               number: 8002

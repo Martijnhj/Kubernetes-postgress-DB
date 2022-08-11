@@ -1,0 +1,25 @@
+minikube mount /Users/MartijnJansen/Documents/Kubernetes/kong-dbless/kong-volume:/kongdeclarative
+#minikube addons enable ingress
+minikube addons enable kong
+
+#kubectl apply -f kong-namespace.yaml
+kubectl apply -f kong-persistentvolume.yaml
+kubectl apply -f kong-persistentvolumeclaim.yaml
+kubectl apply -f kong-deployment.yaml
+kubectl apply -f kong-service.yaml
+kubectl apply -f kong-ingress.yaml
+
+kubectl delete -f kong-namespace.yaml
+kubectl delete -f kong-deployment.yaml
+kubectl delete -f kong-service.yaml
+kubectl delete -f kong-persistentvolume.yaml
+kubectl delete -f kong-persistentvolumeclaim.yaml
+kubectl delete -f kong-ingress.yaml
+
+
+
+minikube tunnel
+
+
+minikube mount /Users/MartijnJansen/Documents/Kubernetes/kong-DB/kong-volume:/kongdeclarative
+minikube mount /Users/MartijnJansen/Documents/Kubernetes/kong-DB/databases/kong-database:/kongdatabase

@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: kong-deployment
+ namespace: kong
+ labels:
+  app: kong
+spec:
+ replicas: 1
+ selector:
+  matchLabels:
+   app: kong
+ template:
+  metadata:
+   labels:
+    app: kong
+  spec:
+   containers:
+    - name: kong
+      image: kong/kong-gateway:latest
+      env:
+       - name: KONG_DATABASE
+         value: "off"
+       - name: KONG_DECLARATIVE_CONFIG
+         value: "/kongdeclarative/kong-config.yml"
+       - name: KONG_PROXY_ACCESS_LOG
+         value: "/dev/stdout"
+       - name: KONG_ADMIN_ACCESS_LOG
+         value: "/dev/stdout"
+       - name: KONG_PROXY_ERROR_LOG
+         value: "/dev/stderr"
+       - name: KONG_ADMIN_ERROR_LOG
+         value: "/dev/stderr"
+       - name: KONG_ADMIN_LISTEN
+         value: "0.0.0.0:8001"
+       - name: KONG_ADMIN_GUI_URL
+         value: "http://localhost:8002"
+       - name: KONG_LICENSE_DATA
+      ports:
+       - containerPort: 8000
+       - containerPort: 8443
+       - containerPort: 8001
+       - containerPort: 8444
+       - containerPort: 8002
+       - containerPort: 8445
+       - containerPort: 8003
+       - containerPort: 8004
+      volumeMounts:
+       - name: kong-declaratives
+         mountPath: /kongdeclarative/
+      securityContext:
+       privileged: true # Processes in privileged containers are essentially equivalent to root on the host.
+         
+   volumes:
+     - name: kong-declaratives
+       #hostPath:
+       # directory location on host
+       #path: /data/kongdeclerative
+       # this field is optional
+       #type: Directory
+       persistentVolumeClaim:
+        claimName: kong-declaratives
